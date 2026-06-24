@@ -13,6 +13,9 @@ import { UserRole } from '../users/user-role.enum'; // LABORATORIO 2
 import { RegisterDto } from './dto/register.dto'; // LABORATORIO 2
 import { LoginDto } from './dto/login.dto'; // LABORATORIO 2
 import { randomUUID } from 'crypto'; // App plantas: genera tokens únicos para verificar el email
+import { ForgotPasswordDto } from './dto/forgot-password.dto'; // App plantas: DTO para pedir recuperación de contraseña por email
+import { ResetPasswordDto } from './dto/reset-password.dto'; // App plantas: DTO para cambiar la contraseña usando token
+
 
 @Injectable()
 export class AuthService {
@@ -110,6 +113,53 @@ export class AuthService {
     console.log('Nuevo link de verificación:', verificationLink);
 
     return { message: 'Email reenviado' }; // App plantas: respuesta que recibe Angular
+  }
+
+    // App plantas: genera un token para recuperar contraseña y prepara el link de reset
+  async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {
+    const email = dto.email.trim().toLowerCase();
+
+    const user = await this.usersRepo.findOne({
+      where: { email }, // App plantas: busca si existe un usuario con ese email
+    });
+
+    if (user) {
+      const resetPasswordToken = randomUUID(); // App plantas: genera un token único para recuperar contraseña
+      const resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // App plantas: hace que el token expire en 1 hora
+
+      user.resetPasswordToken = resetPasswordToken; // App plantas: guarda el token de recuperación en el usuario
+      user.resetPasswordExpires = resetPasswordExpires; // App plantas: guarda la fecha de expiración del token
+
+      await this.usersRepo.save(user); // App plantas: guarda token y expiración en la base de datos
+
+      const resetLink = `http://localhost:4200/reset-password?token=${resetPasswordToken}`; // App plantas: link que se enviará por email para cambiar contraseña
+
+      // App plantas: temporal para pruebas; después se reemplaza por servicio real de email
+      console.log('Link de recuperación:', resetLink);
+    }
+
+    return { message: 'Si el email existe, recibirás un link' }; // App plantas: siempre responde igual por seguridad
+  }
+
+  // App plantas: cambia la contraseña usando el token recibido desde el link de recuperación
+  async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
+    const user = await this.usersRepo.findOne({
+      where: { resetPasswordToken: dto.token }, // App plantas: busca el usuario asociado al token de recuperación
+    });
+
+    if (!user || !user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+      throw new BadRequestException('Token inválido o expirado'); // App plantas: rechaza token inexistente o vencido
+    }
+
+    const rounds = Number(this.cfg.get<string>('BCRYPT_COST') ?? '12');
+    user.passwordHash = await bcrypt.hash(dto.password, rounds); // App plantas: hashea la nueva contraseña antes de guardarla
+
+    user.resetPasswordToken = null; // App plantas: limpia el token para que no pueda reutilizarse
+    user.resetPasswordExpires = null; // App plantas: limpia la fecha de expiración del token
+
+    await this.usersRepo.save(user); // App plantas: guarda la nueva contraseña y limpia datos de reset
+
+    return { message: 'Contraseña actualizada' }; // App plantas: respuesta que recibe Angular cuando el cambio salió bien
   }
 
   // LABORATORIO 2 - MODIFICADO LABORATORIO 3: login devuelve access_token JWT

@@ -22,4 +22,10 @@ export class UserEntity {
 
   @Column({ type: 'text', nullable: true })
   verificationToken!: string | null; // App plantas: guarda el token enviado por email para verificar la cuenta
+
+  @Column({ type: 'text', nullable: true })
+  resetPasswordToken!: string | null; // App plantas: guarda el token enviado por email para recuperar la contraseña
+
+  @Column({ type: 'timestamp', nullable: true })
+  resetPasswordExpires!: Date | null; // App plantas: guarda hasta cuándo es válido el token de recuperación
 }
