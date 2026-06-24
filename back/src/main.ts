@@ -4,13 +4,13 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
-  await app.listen(process.env.PORT ?? 3000);
+
+  app.enableCors({
+    origin: 'http://localhost:4200', // App plantas: permite que Angular pueda llamar al backend NestJS
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'], // App plantas: métodos HTTP permitidos desde el frontend
+    allowedHeaders: ['Content-Type', 'Authorization'], // App plantas: headers permitidos para JSON y JWT
+  });
+
+  await app.listen(3000);
 }
 bootstrap();

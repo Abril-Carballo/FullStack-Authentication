@@ -1,0 +1,15 @@
+<section class="verify-email">
+  <div class="panel">
+    <h1>Verificación de email</h1>
+
+    @if (loading()) {
+      <p>Verificando email...</p>
+    } @else {
+      <p [class.success]="success()" [class.error]="!success()">
+        {{ message() }}
+      </p>
+
+      <a routerLink="/login">Ir al login</a>
+    }
+  </div>
+</section>

@@ -29,10 +29,16 @@ export class AuthService {
     );
   }
 
+
   login(dto: LoginDto): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.api}/login`, dto).pipe(
       tap((res) => this.handleAuth(res)),
     );
+  }
+
+  verifyEmail(token: string): Observable<{ message: string }> {
+    // App plantas: envía al backend el token que llegó en el link del email
+    return this.http.post<{ message: string }>(`${this.api}/verify-email`, { token });
   }
 
   me(): Observable<SafeUser> {
