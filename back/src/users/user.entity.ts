@@ -16,4 +16,10 @@ export class UserEntity {
 
   @Column({ type: 'text', default: UserRole.USER })
   role!: UserRole;
+
+  @Column({ type: 'boolean', default: false })
+  isVerified!: boolean; // App plantas: indica si el usuario ya verificó su email
+
+  @Column({ type: 'text', nullable: true })
+  verificationToken!: string | null; // App plantas: guarda el token enviado por email para verificar la cuenta
 }

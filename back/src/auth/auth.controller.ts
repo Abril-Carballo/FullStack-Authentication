@@ -17,4 +17,10 @@ export class AuthController {
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
+
+  @Post('verify-email') // App plantas: crea la ruta POST /auth/verify-email para verificar el email
+  verifyEmail(@Body('token') token: string) {
+    // App plantas: toma el token recibido en el body y se lo pasa al service
+    return this.authService.verifyEmail(token);
+  }
 }

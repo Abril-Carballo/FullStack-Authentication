@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException, // App plantas: permite devolver error 400 cuando el token de verificación no existe o no sirve
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt'; // LABORATORIO 3
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,6 +12,7 @@ import { UserEntity } from '../users/user.entity'; // LABORATORIO 2
 import { UserRole } from '../users/user-role.enum'; // LABORATORIO 2
 import { RegisterDto } from './dto/register.dto'; // LABORATORIO 2
 import { LoginDto } from './dto/login.dto'; // LABORATORIO 2
+import { randomUUID } from 'crypto'; // App plantas: genera tokens únicos para verificar el email
 
 @Injectable()
 export class AuthService {
@@ -19,7 +24,9 @@ export class AuthService {
   ) {}
 
   // LABORATORIO 2: registro con hash bcrypt y rol automático
-  async register(dto: RegisterDto): Promise<{ id: string; email: string; role: UserRole }> {
+  async register(
+    dto: RegisterDto,
+  ): Promise<{ id: string; email: string; role: UserRole; isVerified: boolean }> {
     const rounds = Number(this.cfg.get<string>('BCRYPT_COST') ?? '12');
     const passwordHash = await bcrypt.hash(dto.password, rounds);
 
@@ -27,14 +34,47 @@ export class AuthService {
     const countUsers = await this.usersRepo.count();
     const role = countUsers === 0 ? UserRole.ADMIN : UserRole.USER;
 
+    const verificationToken = randomUUID(); // App plantas: crea un token único para este usuario recién registrado
+
     const entity = this.usersRepo.create({
       email: dto.email.trim().toLowerCase(),
       passwordHash,
       role,
+      isVerified: false, // App plantas: el usuario arranca como no verificado
+      verificationToken, // App plantas: guarda el token para poder validar el link del email después
     });
 
     await this.usersRepo.save(entity);
-    return { id: entity.id, email: entity.email, role: entity.role };
+
+    const verificationLink = `http://localhost:4200/verify-email?token=${verificationToken}`; // App plantas: link que se enviará por email al usuario
+
+    // App plantas: por ahora solo dejamos armado el link; después lo enviamos con un servicio de email real
+    console.log('Link de verificación:', verificationLink);
+
+    return {
+      id: entity.id,
+      email: entity.email,
+      role: entity.role,
+      isVerified: entity.isVerified, // App plantas: devuelve al front si el usuario está verificado
+    };
+  }
+
+  // App plantas: verifica el email usando el token recibido desde el frontend
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    const user = await this.usersRepo.findOne({
+      where: { verificationToken: token }, // App plantas: busca el usuario que tenga guardado ese token
+    });
+
+    if (!user) {
+      throw new BadRequestException('Token inválido o expirado'); // App plantas: si no existe usuario con ese token, devuelve error 400
+    }
+
+    user.isVerified = true; // App plantas: marca el email del usuario como verificado
+    user.verificationToken = null; // App plantas: borra el token para que no pueda reutilizarse
+
+    await this.usersRepo.save(user); // App plantas: guarda los cambios en la base de datos
+
+    return { message: 'Email verificado' }; // App plantas: respuesta que recibe Angular cuando todo salió bien
   }
 
   // LABORATORIO 2 - MODIFICADO LABORATORIO 3: login devuelve access_token JWT
