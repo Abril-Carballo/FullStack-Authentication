@@ -21,6 +21,11 @@ export const routes: Routes = [
       import('./pages/verify-email/verify-email').then((m) => m.VerifyEmailPage),
   },
   {
+    path: 'verify-pending', // App plantas: pantalla pública que avisa al usuario que revise su email
+    loadComponent: () =>
+      import('./pages/verify-pending/verify-pending').then((m) => m.VerifyPendingPage), // App plantas: carga la pantalla de espera de verificación
+  },
+  {
     path: 'profile',
     loadComponent: () => import('./pages/profile/profile').then((m) => m.ProfilePage),
     canActivate: [authGuard],

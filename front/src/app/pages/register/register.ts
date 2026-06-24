@@ -32,7 +32,7 @@ export class RegisterPage {
 
     try {
       await firstValueFrom(this.auth.register({ email: this.email, password: this.password }));
-      this.router.navigate(['/']);
+      this.router.navigate(['/verify-pending']); // App plantas: después del registro, avisa que debe revisar su email
     } catch (err: any) {
       this.error = err.error?.message || 'Error al registrarse';
     } finally {

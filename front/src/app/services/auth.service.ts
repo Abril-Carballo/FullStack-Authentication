@@ -23,12 +23,14 @@ export class AuthService {
     }
   }
 
-  register(dto: RegisterDto): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.api}/register`, dto).pipe(
-      tap((res) => this.handleAuth(res)),
+  // lo cambie para que cuando registres un usuario te lleve a una pestania de 'Revisá tu email'
+  register(dto: RegisterDto): Observable<{ id: string; email: string; role: string; isVerified: boolean }> {
+    // App plantas: registra al usuario pero no inicia sesión automáticamente porque debe verificar su email
+    return this.http.post<{ id: string; email: string; role: string; isVerified: boolean }>(
+      `${this.api}/register`,
+      dto,
     );
   }
-
 
   login(dto: LoginDto): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.api}/login`, dto).pipe(
