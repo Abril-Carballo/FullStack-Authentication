@@ -26,7 +26,10 @@ export class AuthService {
   // LABORATORIO 2: registro con hash bcrypt y rol automático
   async register(
     dto: RegisterDto,
-  ): Promise<{ id: string; email: string; role: UserRole; isVerified: boolean }> {
+  ): Promise<{
+    access_token: string;
+    user: { id: string; email: string; role: UserRole; isVerified: boolean };
+  }> {
     const rounds = Number(this.cfg.get<string>('BCRYPT_COST') ?? '12');
     const passwordHash = await bcrypt.hash(dto.password, rounds);
 
@@ -51,11 +54,16 @@ export class AuthService {
     // App plantas: por ahora solo dejamos armado el link; después lo enviamos con un servicio de email real
     console.log('Link de verificación:', verificationLink);
 
+    const accessToken = this.jwtService.sign({ sub: entity.id, role: entity.role }); // App plantas: genera un JWT para que el usuario quede logueado después de registrarse
+
     return {
-      id: entity.id,
-      email: entity.email,
-      role: entity.role,
-      isVerified: entity.isVerified, // App plantas: devuelve al front si el usuario está verificado
+      access_token: accessToken, // App plantas: devuelve el token al frontend para poder llamar endpoints protegidos como resend-verification
+      user: {
+        id: entity.id,
+        email: entity.email,
+        role: entity.role,
+        isVerified: entity.isVerified, // App plantas: devuelve al front si el usuario está verificado
+      },
     };
   }
 
@@ -75,6 +83,33 @@ export class AuthService {
     await this.usersRepo.save(user); // App plantas: guarda los cambios en la base de datos
 
     return { message: 'Email verificado' }; // App plantas: respuesta que recibe Angular cuando todo salió bien
+  }
+
+    // App plantas: reenvía el email de verificación para el usuario logueado
+  async resendVerification(userId: string): Promise<{ message: string }> {
+    const user = await this.usersRepo.findOne({
+      where: { id: userId }, // App plantas: busca al usuario autenticado usando el id que viene del JWT
+    });
+
+    if (!user) {
+      throw new BadRequestException('Usuario no encontrado'); // App plantas: devuelve error si el usuario del JWT no existe
+    }
+
+    if (user.isVerified) {
+      return { message: 'El email ya está verificado' }; // App plantas: evita reenviar verificación si ya está verificado
+    }
+
+    const verificationToken = randomUUID(); // App plantas: genera un nuevo token único de verificación
+    user.verificationToken = verificationToken; // App plantas: guarda el nuevo token en el usuario
+
+    await this.usersRepo.save(user); // App plantas: persiste el nuevo token en la base de datos
+
+    const verificationLink = `http://localhost:4200/verify-email?token=${verificationToken}`; // App plantas: link que se enviará al usuario por email
+
+    // App plantas: temporal para pruebas; después se reemplaza por un servicio real de email
+    console.log('Nuevo link de verificación:', verificationLink);
+
+    return { message: 'Email reenviado' }; // App plantas: respuesta que recibe Angular
   }
 
   // LABORATORIO 2 - MODIFICADO LABORATORIO 3: login devuelve access_token JWT

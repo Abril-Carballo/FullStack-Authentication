@@ -23,12 +23,9 @@ export class AuthService {
     }
   }
 
-  // lo cambie para que cuando registres un usuario te lleve a una pestania de 'Revisá tu email'
-  register(dto: RegisterDto): Observable<{ id: string; email: string; role: string; isVerified: boolean }> {
-    // App plantas: registra al usuario pero no inicia sesión automáticamente porque debe verificar su email
-    return this.http.post<{ id: string; email: string; role: string; isVerified: boolean }>(
-      `${this.api}/register`,
-      dto,
+  register(dto: RegisterDto): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.api}/register`, dto).pipe(
+      tap((res) => this.handleAuth(res)), // App plantas: guarda el JWT para que el usuario pueda reenviar el email con endpoint protegido
     );
   }
 
@@ -41,6 +38,11 @@ export class AuthService {
   verifyEmail(token: string): Observable<{ message: string }> {
     // App plantas: envía al backend el token que llegó en el link del email
     return this.http.post<{ message: string }>(`${this.api}/verify-email`, { token });
+  }
+
+  resendVerification(): Observable<{ message: string }> {
+    // App plantas: llama al backend para generar y reenviar un nuevo token de verificación usando el JWT guardado
+    return this.http.post<{ message: string }>(`${this.api}/resend-verification`, {});
   }
 
   me(): Observable<SafeUser> {

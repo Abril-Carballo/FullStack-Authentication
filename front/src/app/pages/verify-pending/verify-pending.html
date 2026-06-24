@@ -5,6 +5,22 @@
     <p>Te enviamos un link de verificación.</p>
     <p>Cuando verifiques tu cuenta, vas a poder iniciar sesión.</p>
 
+    <button type="button" (click)="resendEmail()" [disabled]="loading()">
+      @if (loading()) {
+        Reenviando...
+      } @else {
+        Reenviar email
+      }
+    </button>
+
+    @if (message()) {
+      <p class="success">{{ message() }}</p>
+    }
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
     <a routerLink="/login">Ir al login</a>
   </div>
 </section>
