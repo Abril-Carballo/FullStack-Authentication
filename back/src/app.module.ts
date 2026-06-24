@@ -1,6 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config'; // LABORATORIO 2: carga variables de entorno
+import { ConfigModule , ConfigService} from '@nestjs/config'; // LABORATORIO 2: carga variables de entorno
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ProductsModule } from './products/products.module';
@@ -13,15 +13,24 @@ import { ProductEntity } from './products/product.entity';
 import { CategoryEntity } from './categories/category.entity';
 import { UserEntity } from './users/user.entity'; // LABORATORIO 2: entidad de usuarios
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ['.env', '.env.local'] }), // LABORATORIO 2
+
+    // cambio de bdd
     TypeOrmModule.forRoot({
-      type: 'better-sqlite3',
-      database: 'products.db',
-      entities: [ProductEntity, CategoryEntity, UserEntity], // LABORATORIO 2: agregada UserEntity
+      type: 'postgres',
+      host: 'localhost',
+      port: 5432,
+      username: 'postgres',
+      password: 'as',
+      database: 'productos',
+      entities: [ProductEntity, CategoryEntity, UserEntity],
       synchronize: true,
     }),
+    // -------
+    
     ProductsModule,
     UsersModule,
     CategoriesModule,
