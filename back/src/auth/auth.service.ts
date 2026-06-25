@@ -181,4 +181,15 @@ export class AuthService {
     const accessToken = this.jwtService.sign({ sub: user.id, role: user.role });
     return { access_token: accessToken };
   }
+
+  async me(userId: string): Promise<{ id: string; email: string; role: UserRole; isVerified: boolean }> {
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException('Usuario no encontrado');
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      isVerified: user.isVerified,
+    };
+  }
 }

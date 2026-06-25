@@ -1,10 +1,11 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common'; 
 import { AuthService } from './auth.service'; // LABORATORIO 2
 import { RegisterDto } from './dto/register.dto'; // LABORATORIO 2
 import { LoginDto } from './dto/login.dto'; // LABORATORIO 2
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'; // LABORATORIO 3
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+
 
 
 // LABORATORIO 2: rutas públicas de autenticación
@@ -45,5 +46,10 @@ export class AuthController {
     return this.authService.resetPassword(dto);
   }
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  me(@Req() req: any) {
+    return this.authService.me(req.user.id);
+  }
 
 }
