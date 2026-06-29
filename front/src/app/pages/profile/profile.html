@@ -1,6 +1,8 @@
 <div class="row justify-content-center mt-4">
   <div class="col-md-6 col-lg-5">
-    <div class="card shadow-sm">
+
+    <!-- Tarjeta de datos del perfil -->
+    <div class="card shadow-sm mb-4">
       <div class="card-body p-4">
         @if (auth.user(); as user) {
           <div class="text-center mb-4">
@@ -33,6 +35,21 @@
                 </td>
               </tr>
               <tr>
+                <th class="ps-0">Verificado</th>
+                <td>
+                  <!-- Badge que muestra si el email del usuario está verificado o no -->
+                  @if (user.isVerified) {
+                    <span class="badge bg-success">
+                      <i class="bi bi-check-circle me-1"></i>Verificado
+                    </span>
+                  } @else {
+                    <span class="badge bg-danger">
+                      <i class="bi bi-x-circle me-1"></i>No verificado
+                    </span>
+                  }
+                </td>
+              </tr>
+              <tr>
                 <th class="ps-0">Registrado</th>
                 <td><i class="bi bi-calendar me-1 text-muted"></i>{{ user.createdAt | date:'medium' }}</td>
               </tr>
@@ -53,5 +70,77 @@
         }
       </div>
     </div>
+
+    <!-- Formulario cambiar contraseña -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-3">
+          <i class="bi bi-lock me-2" style="color: var(--primary)"></i>Cambiar contraseña
+        </h5>
+        <div class="mb-3">
+          <label class="form-label">Contraseña actual</label>
+          <input
+            type="password"
+            class="form-control"
+            [(ngModel)]="currentPassword"
+            placeholder="Ingresá tu contraseña actual"
+          />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nueva contraseña</label>
+          <input
+            type="password"
+            class="form-control"
+            [(ngModel)]="newPassword"
+            placeholder="Mínimo 8 caracteres"
+          />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Confirmar nueva contraseña</label>
+          <input
+            type="password"
+            class="form-control"
+            [(ngModel)]="confirmPassword"
+            placeholder="Repetí la nueva contraseña"
+          />
+        </div>
+        <button class="btn btn-primary w-100" (click)="changePassword()">
+          <i class="bi bi-lock-fill me-1"></i>Actualizar contraseña
+        </button>
+      </div>
+    </div>
+
+    <!-- Formulario cambiar email -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-3">
+          <i class="bi bi-envelope me-2" style="color: var(--primary)"></i>Cambiar email
+        </h5>
+        <div class="mb-3">
+          <label class="form-label">Nuevo email</label>
+          <input
+            type="email"
+            class="form-control"
+            [(ngModel)]="newEmail"
+            placeholder="Ingresá el nuevo email"
+          />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Contraseña actual</label>
+          <input
+            type="password"
+            class="form-control"
+            [(ngModel)]="emailPassword"
+            placeholder="Confirmá con tu contraseña"
+          />
+        </div>
+        <button class="btn btn-primary w-100" (click)="changeEmail()">
+          <i class="bi bi-envelope-fill me-1"></i>Actualizar email
+        </button>
+      </div>
+    </div>
+
   </div>
 </div>
+
+
