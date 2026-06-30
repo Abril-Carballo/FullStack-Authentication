@@ -1,5 +1,4 @@
 import { Global, Module } from '@nestjs/common';
-//agregardo para el punto 1.6
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersController } from './controllers/users.controller';
 import { JsonPlaceholderUsersGateway } from './gateways/jsonplaceholder-users.gateway';
