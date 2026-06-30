@@ -16,8 +16,9 @@ export class ProductsService {
     private readonly productsRepository: ProductsRepository,
   ) {}
 
-  async findAll(name?: string, orderBy?: string, order?: string): Promise<Product[]> {
-    return this.productsRepository.findAll(name, orderBy, order);
+  // agrega page y limit para paginación
+  async findAll(name?: string, orderBy?: string, order?: string, page = 1, limit = 10): Promise<{ items: Product[]; total: number; page: number; limit: number }> {
+    return this.productsRepository.findAll(name, orderBy, order, page, limit);
   }
 
   async findOne(id: number): Promise<Product> {
@@ -53,3 +54,4 @@ export class ProductsService {
     return this.productsRepository.updateStock(id, quantity) as Promise<Product>;
   }
 }
+

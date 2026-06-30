@@ -12,49 +12,67 @@ export class TypeOrmProductsRepository implements ProductsRepository {
     private readonly repo: Repository<ProductEntity>,
   ) {}
 
-  findAll(name?: string, orderBy?: string, order?: string): Promise<Product[]> {
-    let query = this.repo.createQueryBuilder('p');
+  async findAll(name?: string, orderBy?: string, order?: string, page = 1, limit = 10): Promise<{ items: Product[]; total: number; page: number; limit: number }> {
+    let query = this.repo.createQueryBuilder('p')
+      .leftJoinAndSelect('p.category', 'category');
 
     if (name) {
       query = query.where('LOWER(p.name) LIKE :name', { name: `%${name.toLowerCase()}%` });
     }
 
-    if (orderBy === 'price' || orderBy === 'name') {
-      query = query.orderBy(`p.${orderBy}`, order === 'desc' ? 'DESC' : 'ASC');
+    if (orderBy === 'price' || orderBy === 'name' || orderBy === 'stock' || orderBy === 'id') {
+      query = query.orderBy(`p.${orderBy}`, order === 'DESC' ? 'DESC' : 'ASC');
     }
 
-    return query.getMany();
+    const total = await query.getCount();
+    const items = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    return { items, total, page, limit };
   }
 
   findById(id: number): Promise<Product | undefined> {
-    return this.repo.findOneBy({ id }).then(e => e ?? undefined);
+    return this.repo.findOne({
+      where: { id },
+      relations: { category: true },
+    }).then(e => e ?? undefined);
   }
 
-  create(input: CreateProductInput): Promise<Product> {
-    return this.repo.save(this.repo.create(input));
+  async create(input: CreateProductInput): Promise<Product> {
+    const entity = this.repo.create(input);
+    const saved = await this.repo.save(entity);
+    return this.repo.findOne({
+      where: { id: saved.id },
+      relations: { category: true },
+    }) as Promise<Product>;
   }
 
   update(id: number, input: UpdateProductInput): Promise<Product | undefined> {
-    return this.repo.findOneBy({ id }).then(async entity => {
+    return this.repo.findOne({ where: { id }, relations: { category: true } }).then(async entity => {
       if (!entity) return undefined;
       Object.assign(entity, input);
-      return this.repo.save(entity);
+      await this.repo.save(entity);
+      return this.repo.findOne({ where: { id }, relations: { category: true } }) as Promise<Product>;
     });
   }
 
   remove(id: number): Promise<Product | undefined> {
-    return this.repo.findOneBy({ id }).then(async entity => {
+    return this.repo.findOne({ where: { id }, relations: { category: true } }).then(async entity => {
       if (!entity) return undefined;
       await this.repo.remove(entity);
-      return entity;
+      return { ...entity, id };
     });
   }
 
   updateStock(id: number, quantity: number): Promise<Product | undefined> {
-    return this.repo.findOneBy({ id }).then(async entity => {
+    return this.repo.findOne({ where: { id }, relations: { category: true } }).then(async entity => {
       if (!entity) return undefined;
       entity.stock = (entity.stock ?? 0) - quantity;
       return this.repo.save(entity);
     });
   }
 }
+
+

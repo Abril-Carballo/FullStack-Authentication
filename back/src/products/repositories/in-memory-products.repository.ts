@@ -9,17 +9,14 @@ export class InMemoryProductsRepository implements ProductsRepository {
   private products: Product[] = [];
   private nextId = 1;
 
-  // DESPUÉS
-  // DESPUÉS
-findAll(name?: string, orderBy?: string, order?: string): Product[] {
+  
+async findAll(name?: string, orderBy?: string, order?: string, page = 1, limit = 10): Promise<{ items: Product[]; total: number; page: number; limit: number }> {
   let result = this.products;
-
   if (name) {
     result = result.filter((p) =>
       p.name.toLowerCase().includes(name.toLowerCase())
     );
   }
-
   if (orderBy === 'price' || orderBy === 'name') {
     result = [...result].sort((a, b) => {
       if (a[orderBy] < b[orderBy]) return order === 'desc' ? 1 : -1;
@@ -27,8 +24,9 @@ findAll(name?: string, orderBy?: string, order?: string): Product[] {
       return 0;
     });
   }
-
-  return result;
+  const total = result.length;
+  const items = result.slice((page - 1) * limit, page * limit);
+  return { items, total, page, limit };
 }
 
   findById(id: number): Product | undefined {

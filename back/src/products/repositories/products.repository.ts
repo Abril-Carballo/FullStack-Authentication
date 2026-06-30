@@ -7,7 +7,7 @@ import {
 export const PRODUCTS_REPOSITORY = 'PRODUCTS_REPOSITORY';
 
 export interface ProductsRepository {
-  findAll(name?: string, orderBy?: string, order?: string): Product[] | Promise<Product[]>;
+  findAll(name?: string, orderBy?: string, order?: string, page?: number, limit?: number): Promise<{ items: Product[]; total: number; page: number; limit: number }>;
   findById(id: number): Product | undefined | Promise<Product | undefined>;
   create(input: CreateProductInput): Product | Promise<Product>;
   update(id: number, input: UpdateProductInput): Product | undefined | Promise<Product | undefined>;

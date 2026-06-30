@@ -8,7 +8,7 @@ import {
   Post,
   Put,
   Query,
-  UseGuards, // LABORATORIO 3
+  UseGuards,
 } from '@nestjs/common';
 import { ProductsService } from '../services/products.service';
 import {
@@ -16,32 +16,41 @@ import {
   Product,
   UpdateProductInput,
 } from '../product.types';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'; // LABORATORIO 3
-import { RolesGuard } from '../../common/guards/roles.guard'; // LABORATORIO 3
-import { Roles } from '../../common/decorators/roles.decorator'; // LABORATORIO 3
-import { UserRole } from '../../users/user-role.enum'; // LABORATORIO 3
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../../users/user-role.enum';
 
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  // LABORATORIO 3: ruta pública — cualquiera puede ver productos
+  // agrega JWT, paginación y sortBy
   @Get()
+  @UseGuards(JwtAuthGuard)
   findAll(
     @Query('name') name?: string,
-    @Query('orderBy') orderBy?: string,
+    @Query('sortBy') orderBy?: string,
     @Query('order') order?: string,
-  ): Promise<Product[]> {
-    return this.productsService.findAll(name, orderBy, order);
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<{ items: Product[]; total: number; page: number; limit: number }> {
+    return this.productsService.findAll(
+      name,
+      orderBy,
+      order,
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 10,
+    );
   }
 
-  // LABORATORIO 3: ruta pública
+  // agrega JWT
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string): Promise<Product> {
     return this.productsService.findOne(Number(id));
   }
 
-  // LABORATORIO 3: solo admin puede crear productos
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -49,7 +58,6 @@ export class ProductsController {
     return this.productsService.create(body);
   }
 
-  // LABORATORIO 3: solo admin puede actualizar productos
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -57,7 +65,6 @@ export class ProductsController {
     return this.productsService.update(Number(id), body);
   }
 
-  // LABORATORIO 3: solo admin puede eliminar productos
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -65,7 +72,6 @@ export class ProductsController {
     return this.productsService.remove(Number(id));
   }
 
-  // LABORATORIO 3: solo admin puede actualizar stock
   @Patch(':id/stock')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -76,3 +82,4 @@ export class ProductsController {
     return this.productsService.updateStock(Number(id), body.quantity);
   }
 }
+

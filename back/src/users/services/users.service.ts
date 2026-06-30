@@ -1,10 +1,10 @@
 import { ExternalUser } from '../user.types';
 import { USERS_GATEWAY, UsersGateway } from '../gateways/users.gateway';
-import { BadGatewayException, BadRequestException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'; // 1.6: agregamos BadRequestException y UnauthorizedException
-import { InjectRepository } from '@nestjs/typeorm'; //para inyectar el repositorio de TypeORM
+import { BadGatewayException, BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm'; 
 import { UserEntity } from '../user.entity'; 
-import * as bcrypt from 'bcrypt'; // para verificar y hashear contraseñas
+import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config'; 
 import { UserRole } from '../user-role.enum';
 
@@ -18,12 +18,15 @@ export class UsersService {
     private readonly cfg: ConfigService, 
   ) {}
 
-  async findAll(): Promise<ExternalUser[]> {
-    try {
-      return await this.usersGateway.fetchAll();
-    } catch {
-      throw new BadGatewayException('Upstream users service failed');
-    }
+  async findAll(): Promise<{ id: string; email: string; role: string; isVerified: boolean; createdAt: Date }[]> {
+    const users = await this.usersRepo.find();
+    return users.map(u => ({
+      id: u.id,
+      email: u.email,
+      role: u.role,
+      isVerified: u.isVerified,
+      createdAt: u.createdAt,
+    }));
   }
 
   async findOne(id: number): Promise<ExternalUser> {
@@ -37,7 +40,6 @@ export class UsersService {
     }
   }
 
- 
   async updatePassword(userId: string, currentPassword: string, newPassword: string): Promise<{ message: string }> {
     const user = await this.usersRepo
       .createQueryBuilder('u')
@@ -58,28 +60,28 @@ export class UsersService {
     return { message: 'Password updated' };
   }
 
-    async updateEmail(userId: string, newEmail: string, password: string): Promise<{ message: string }> {
-      const user = await this.usersRepo
-        .createQueryBuilder('u')
-        .addSelect('u.passwordHash') 
-        .where('u.id = :id', { id: userId })
-        .getOne();
+  async updateEmail(userId: string, newEmail: string, password: string): Promise<{ message: string }> {
+    const user = await this.usersRepo
+      .createQueryBuilder('u')
+      .addSelect('u.passwordHash') 
+      .where('u.id = :id', { id: userId })
+      .getOne();
 
-      if (!user) throw new UnauthorizedException('Usuario no encontrado');
+    if (!user) throw new UnauthorizedException('Usuario no encontrado');
 
-      const ok = await bcrypt.compare(password, user.passwordHash);
-      if (!ok) throw new BadRequestException('La contraseña es incorrecta');
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) throw new BadRequestException('La contraseña es incorrecta');
 
-      user.email = newEmail.trim().toLowerCase();
+    user.email = newEmail.trim().toLowerCase();
 
-      await this.usersRepo.save(user);
+    await this.usersRepo.save(user);
 
-      return { message: 'Email updated' };
-    }
+    return { message: 'Email updated' };
+  }
 
   async updateRole(requesterId: string, targetId: string, role: string): Promise<{ id: string; email: string; role: string; isVerified: boolean }> {
     if (requesterId === targetId) {
-      throw new BadRequestException('Cannot change your own role');
+      throw new ForbiddenException('Cannot change your own role'); 
     }
 
     const target = await this.usersRepo.findOne({ where: { id: targetId } });
@@ -101,4 +103,3 @@ export class UsersService {
     };
   }
 }
-

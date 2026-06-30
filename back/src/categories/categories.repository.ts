@@ -45,4 +45,13 @@ export class CategoriesRepository {
     await this.repo.update(id, input);
     return this.repo.findOneBy({ id }) as Promise<Category>;
   }
+
+  async unlinkCategory(productId: number): Promise<void> {
+    await this.repo.manager
+      .createQueryBuilder()
+      .update('products')
+      .set({ categoryId: null })
+      .where('id = :id', { id: productId })
+      .execute();
+  }
 }

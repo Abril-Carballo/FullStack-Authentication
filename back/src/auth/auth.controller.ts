@@ -1,11 +1,10 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common'; 
-import { AuthService } from './auth.service'; // LABORATORIO 2
-import { RegisterDto } from './dto/register.dto'; // LABORATORIO 2
-import { LoginDto } from './dto/login.dto'; // LABORATORIO 2
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'; // LABORATORIO 3
+import { Body, Controller, Get, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-
 
 
 // LABORATORIO 2: rutas públicas de autenticación
@@ -29,10 +28,10 @@ export class AuthController {
     return this.authService.verifyEmail(token);
   }
 
-  @Post('resend-verification') // App plantas: crea la ruta POST /auth/resend-verification protegida con JWT
-  @UseGuards(JwtAuthGuard) // App plantas: exige token JWT para saber qué usuario pide el reenvío
+  @Post('resend-verification')
+  @HttpCode(200) 
+  @UseGuards(JwtAuthGuard)
   resendVerification(@Req() req: any) {
-    // App plantas: req.user viene del JwtStrategy y contiene el id del usuario autenticado
     return this.authService.resendVerification(req.user.id);
   }
 

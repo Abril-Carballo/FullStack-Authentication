@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { UserRole } from './user-role.enum'; // LABORATORIO 2
 
 // LABORATORIO 2: entidad que mapea la tabla 'users' en SQLite
@@ -28,4 +28,9 @@ export class UserEntity {
 
   @Column({ type: 'timestamp', nullable: true })
   resetPasswordExpires!: Date | null; // App plantas: guarda hasta cuándo es válido el token de recuperación
+
+  @CreateDateColumn() // agrega automáticamente la fecha de creación del usuario
+  createdAt!: Date;
 }
+
+

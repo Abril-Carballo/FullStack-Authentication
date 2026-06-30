@@ -187,7 +187,7 @@ export class AuthService {
       },
     };
   }
-  async me(userId: string): Promise<{ id: string; email: string; role: UserRole; isVerified: boolean }> {
+  async me(userId: string): Promise<{ id: string; email: string; role: UserRole; isVerified: boolean; createdAt: Date }> {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (!user) throw new UnauthorizedException('Usuario no encontrado');
     return {
@@ -195,6 +195,7 @@ export class AuthService {
       email: user.email,
       role: user.role,
       isVerified: user.isVerified,
+      createdAt: user.createdAt, // agregado para cumplir con el test
     };
   }
 }

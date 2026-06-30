@@ -41,13 +41,20 @@ export class CategoriesService {
     const category = await this.categoriesRepository.findWithProducts(id);
     if (!category) throw new NotFoundException('Category not found');
 
+    // si tiene productos, desvinculamos la categoría antes de borrarla
     if (category.products?.length > 0) {
-      throw new ConflictException('No se puede eliminar una categoría con productos asociados');
+      await Promise.all(
+        category.products.map(p =>
+          this.categoriesRepository.unlinkCategory(p.id)
+        )
+      );
     }
 
     const removed = await this.categoriesRepository.remove(id);
     return removed!;
   }
+
+  
 
   async findProducts(id: number): Promise<Product[]> {
     const category = await this.categoriesRepository.findWithProducts(id);
