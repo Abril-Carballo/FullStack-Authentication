@@ -15,7 +15,7 @@ import { LoginDto } from './dto/login.dto'; // LABORATORIO 2
 import { randomUUID } from 'crypto'; // App plantas: genera tokens únicos para verificar el email
 import { ForgotPasswordDto } from './dto/forgot-password.dto'; // App plantas: DTO para pedir recuperación de contraseña por email
 import { ResetPasswordDto } from './dto/reset-password.dto'; // App plantas: DTO para cambiar la contraseña usando token
-
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +24,7 @@ export class AuthService {
     private readonly usersRepo: Repository<UserEntity>,
     private readonly cfg: ConfigService, // LABORATORIO 2: para leer BCRYPT_COST del .env
     private readonly jwtService: JwtService, // LABORATORIO 3: para firmar el token
+    private readonly emailService: EmailService, // App plantas: para enviar emails reales
   ) {}
 
   // LABORATORIO 2: registro con hash bcrypt y rol automático
@@ -54,8 +55,8 @@ export class AuthService {
 
     const verificationLink = `http://localhost:4200/verify-email?token=${verificationToken}`; // App plantas: link que se enviará por email al usuario
 
-    // App plantas: por ahora solo dejamos armado el link; después lo enviamos con un servicio de email real
-    console.log('Link de verificación:', verificationLink);
+    await this.emailService.sendVerificationEmail(entity.email, verificationLink); // App plantas: envía el email real de verificación
+  
 
     const accessToken = this.jwtService.sign({ sub: entity.id, role: entity.role }); // App plantas: genera un JWT para que el usuario quede logueado después de registrarse
 
@@ -109,8 +110,7 @@ export class AuthService {
 
     const verificationLink = `http://localhost:4200/verify-email?token=${verificationToken}`; // App plantas: link que se enviará al usuario por email
 
-    // App plantas: temporal para pruebas; después se reemplaza por un servicio real de email
-    console.log('Nuevo link de verificación:', verificationLink);
+    await this.emailService.sendVerificationEmail(user.email, verificationLink); // App plantas: envía el email real con el nuevo token
 
     return { message: 'Email reenviado' }; // App plantas: respuesta que recibe Angular
   }
@@ -134,8 +134,7 @@ export class AuthService {
 
       const resetLink = `http://localhost:4200/reset-password?token=${resetPasswordToken}`; // App plantas: link que se enviará por email para cambiar contraseña
 
-      // App plantas: temporal para pruebas; después se reemplaza por servicio real de email
-      console.log('Link de recuperación:', resetLink);
+      await this.emailService.sendResetPasswordEmail(email, resetLink); // App plantas: envía el email real de recuperación
     }
 
     return { message: 'Si el email existe, recibirás un link' }; // App plantas: siempre responde igual por seguridad
@@ -163,12 +162,12 @@ export class AuthService {
   }
 
   // LABORATORIO 2 - MODIFICADO LABORATORIO 3: login devuelve access_token JWT
-  async login(dto: LoginDto): Promise<{ access_token: string }> {
+  async login(dto: LoginDto): Promise<{ access_token: string; user: { id: string; email: string; role: UserRole; isVerified: boolean } }> {
     const email = dto.email.trim().toLowerCase();
 
     const user = await this.usersRepo
       .createQueryBuilder('u')
-      .addSelect('u.passwordHash') // LABORATORIO 2: traemos el hash explícitamente
+      .addSelect('u.passwordHash')
       .where('u.email = :email', { email })
       .getOne();
 
@@ -177,11 +176,17 @@ export class AuthService {
     const ok = await bcrypt.compare(dto.password, user.passwordHash);
     if (!ok) throw new UnauthorizedException('Credenciales inválidas');
 
-    // LABORATORIO 3: firmamos el token con sub y role
     const accessToken = this.jwtService.sign({ sub: user.id, role: user.role });
-    return { access_token: accessToken };
+    return {
+      access_token: accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        isVerified: user.isVerified,
+      },
+    };
   }
-
   async me(userId: string): Promise<{ id: string; email: string; role: UserRole; isVerified: boolean }> {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (!user) throw new UnauthorizedException('Usuario no encontrado');

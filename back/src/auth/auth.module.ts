@@ -9,13 +9,14 @@ import { JwtStrategy } from './jwt.strategy'; // LABORATORIO 3
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'; // LABORATORIO 3
 import { RolesGuard } from '../common/guards/roles.guard'; // LABORATORIO 3
 import { UserEntity } from '../users/user.entity'; // LABORATORIO 2
+import { EmailModule } from '../email/email.module';
 
 // LABORATORIO 2 - MODIFICADO LABORATORIO 3: agrega JWT, Passport y guards
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity]), // LABORATORIO 2
-    PassportModule.register({ defaultStrategy: 'jwt' }), // LABORATORIO 3
-    JwtModule.registerAsync({ // LABORATORIO 3: lee JWT_SECRET y JWT_EXPIRES_SEC del .env
+    TypeOrmModule.forFeature([UserEntity]),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => ({
@@ -25,6 +26,7 @@ import { UserEntity } from '../users/user.entity'; // LABORATORIO 2
         },
       }),
     }),
+    EmailModule,
   ],
   controllers: [AuthController],
   providers: [

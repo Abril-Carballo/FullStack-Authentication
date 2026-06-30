@@ -67,5 +67,15 @@ export class ProfilePage {
         this.toast.error('Error al cambiar el email. Verificá que la contraseña sea correcta');
       },
     });
+    }
+    resendVerification(): void {
+    this.auth.resendVerification().subscribe({
+      next: () => {
+        this.toast.success('Email de verificación reenviado');
+      },
+      error: () => {
+        this.toast.error('Error al reenviar el email de verificación');
+      },
+    });
   }
 }
